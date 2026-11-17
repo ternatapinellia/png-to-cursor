@@ -1,0 +1,36 @@
+PNG 转 CUR / ANI 使用方法
+=========================
+
+1. 把 PNG 放进本文件夹下的 PNG 文件夹。
+2. 先双击install pillow。然后双击 convert.cmd。
+3. 转换结果显示在 PNG_converted 文件夹。
+
+规则：
+- PNG 根层的单张图片：每张生成一个同名 CUR。
+- PNG 里的子文件夹：里面的 PNG 按文件名顺序合成一个同名 ANI。
+
+示例：
+PNG/
+  mouse.png
+  basic.png
+  Busy/
+    01.png
+    02.png
+    03.png
+
+输出：
+PNG_converted/
+  mouse.cur
+  basic.cur
+  Busy.ani
+
+固定路径：
+输入：C:/Users/mlxxz/Desktop/png-to-cursor/PNG
+输出：C:/Users/mlxxz/Desktop/png-to-cursor/PNG_converted
+
+如果在新电脑使用：
+1. 安装 Python。
+2. 缺少 Pillow 时，双击 install-pillow.cmd。
+3. 把 PNG 放进 PNG 文件夹，双击 convert.cmd。
+
+生成新的cur的时候需要先删除png convert文件夹。

@@ -1,0 +1,53 @@
+PNG 命名和热点说明
+==================
+
+输入目录：C:/Users/mlxxz/Desktop/png-to-cursor/PNG
+输出目录：C:/Users/mlxxz/Desktop/png-to-cursor/PNG_converted
+
+生成规则：
+1. PNG 根层单图 -> 同名 CUR。
+2. PNG 一级子文件夹 -> 其中所有 PNG 合成同名 ANI。
+3. 下表文件名必须与正式名称完全一致。
+4. 需要 .ani 的名称必须使用子文件夹。
+5. 需要 .cur 的名称必须使用根层单图。
+
+正式名称 | 用途 | 32×32热点 | 输入方式 | INF引用
+--- | --- | --- | --- | ---
+NormalSelect | 普通箭头 | 0,0 | 子文件夹 | NormalSelect.ani
+HelpSelect | 帮助选择 | 0,0 | 子文件夹 | HelpSelect.ani
+WorkingInBackground | 后台运行 | 0,0 | 子文件夹 | WorkingInBackground.ani
+Busy | 忙碌/等待 | 14,16 | 子文件夹 | Busy.ani
+PrecisionSelect | 精确选择/十字 | 5,5 | 子文件夹 | PrecisionSelect.ani
+TextSelect | 文本选择 | 0,18 | 子文件夹 | TextSelect.ani
+Pen | 笔/手写 | 0,18 | PNG 根层单图 | Pen.cur
+Unavailable | 不可用/禁止 | 15,15 | PNG 根层单图 | Unavailable.cur
+VerticalResize | 垂直缩放 | 4,15 | 子文件夹 | VerticalResize.ani
+HorizontalResize | 水平缩放 | 15,27 | 子文件夹 | HorizontalResize.ani
+DiagonalResize1 | 对角缩放1 | 15,15 | 子文件夹 | DiagonalResize1.ani
+DiagonalResize2 | 对角缩放2 | 15,15 | 子文件夹 | DiagonalResize2.ani
+Move | 移动 | 15,15 | 子文件夹 | Move.ani
+AltSelect | 备用选择 | 0,0 | PNG 根层单图 | AltSelect.cur
+LinkSelect | 链接选择 | 0,0 | 子文件夹 | LinkSelect.ani
+
+示例：
+PNG/
+  Pen.png
+  Unavailable.png
+  NormalSelect/
+    01.png
+    02.png
+    03.png
+  Busy/
+    01.png
+    02.png
+
+输出：
+PNG_converted/
+  Pen.cur
+  Unavailable.cur
+  NormalSelect.ani
+  Busy.ani
+
+热点坐标：0,0 是左上；31,31 是 32×32 画布右下。
+动画帧按文件名排序，建议 01.png、02.png、03.png。
+每帧保持相同尺寸和元素位置。

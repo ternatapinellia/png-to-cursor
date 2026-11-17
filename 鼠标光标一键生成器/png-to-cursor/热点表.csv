@@ -1,0 +1,16 @@
+﻿命名,用途,32x32热点,输入方式,INF引用
+NormalSelect,普通箭头,"0,0",子文件夹,NormalSelect.ani
+HelpSelect,帮助选择,"0,0",子文件夹,HelpSelect.ani
+WorkingInBackground,后台运行,"0,0",子文件夹,WorkingInBackground.ani
+Busy,忙碌/等待,"14,16",子文件夹,Busy.ani
+PrecisionSelect,精确选择/十字,"5,5",子文件夹,PrecisionSelect.ani
+TextSelect,文本选择,"0,18",子文件夹,TextSelect.ani
+Pen,笔/手写,"0,18",PNG 根层单图,Pen.cur
+Unavailable,不可用/禁止,"15,15",PNG 根层单图,Unavailable.cur
+VerticalResize,垂直缩放,"4,15",子文件夹,VerticalResize.ani
+HorizontalResize,水平缩放,"15,27",子文件夹,HorizontalResize.ani
+DiagonalResize1,对角缩放1,"15,15",子文件夹,DiagonalResize1.ani
+DiagonalResize2,对角缩放2,"15,15",子文件夹,DiagonalResize2.ani
+Move,移动,"15,15",子文件夹,Move.ani
+AltSelect,备用选择,"0,0",PNG 根层单图,AltSelect.cur
+LinkSelect,链接选择,"0,0",子文件夹,LinkSelect.ani
