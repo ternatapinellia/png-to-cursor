@@ -1,0 +1,15 @@
+﻿Generic Icon Template Mini
+
+安装：把 ICO 放进 ICONS 文件夹。双击 install-icons.cmd，按提示允许管理员权限。
+恢复：双击 restore-icons.cmd。
+PNG 转 ICO：把 PNG 放进 PNGS，双击 make-icons.cmd。
+图标必须是静态 ICO；安装前会备份当前设置。
+
+支持：文件夹、桌面文件夹、此电脑、网络、文档、回收站，
+TXT/DOC/DOCX/DOCM、Excel、PDF、PPT、PSD、常用压缩包，
+以及 QQ、微信等快捷方式。
+
+该脚本只支持部分图标，其他图标如要替换请自行右键图标-属性-自定义-更改图标。
+说明：
+- 若要增加专用绑定，请在 Install-Icons.ps1
+  的 extensionIcons、progIdIcons 或 shortcutIconByTarget 规则中登记。

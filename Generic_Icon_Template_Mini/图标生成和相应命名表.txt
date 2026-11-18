@@ -1,0 +1,144 @@
+﻿必须按 PNG-ICO 对应名称安装
+--------------------------------
+安装器只读取 ICONS 文件夹里的 ICO，不会直接安装 PNG。
+
+1. PNG 放进 PNGS 文件夹。
+2. 双击 make-icons.cmd 生成同名 ICO。
+3. 生成的 ICO 才会被安装器使用，只能使用静态ICO，无法使用动态。
+4. 文件名必须按上表对应，例如 Folder.png 必须生成 Folder.ico。
+5. 大小写必须一致，例如 TXT.ico 不能写成 txt.ico。
+6. 改成中文名或随意改名，安装器找不到对应 ICO，会拒绝或终止安装。
+
+图标中文名与生成器对应表
+----------------------------
+ThisPC.png -> ThisPC.ico -> 此电脑
+RecycleBinFull.png -> RecycleBinFull.ico -> 回收站（非空）
+RecycleBinEmpty.png -> RecycleBinEmpty.ico -> 回收站（空）
+Network.png -> Network.ico -> 网络
+Documents.png -> Documents.ico -> 我的文档
+Folder.png -> Folder.ico -> 文件夹
+FolderEmpty.png -> FolderEmpty.ico -> 空文件夹
+TXT.png -> TXT.ico -> 文本、Word/WPS 文档
+Excel.png -> Excel.ico -> Excel 工作簿
+Excel2.png -> Excel2.ico -> Excel 旧格式
+PDF.png -> PDF.ico -> PDF 文档
+PPT.png -> PPT.ico -> PowerPoint 演示文稿
+PS.png -> PS.ico -> Photoshop 程序/快捷方式
+PSD.png -> PSD.ico -> Photoshop 文档（当前不自动关联）
+Archive.png -> Archive.ico -> 压缩包
+QQ.png -> QQ.ico -> QQ
+wechat.png -> wechat.ico -> 微信
+NetEaseCloudMusic.png -> NetEaseCloudMusic.ico -> 网易云音乐
+BaiduNetdisk.png -> BaiduNetdisk.ico -> 百度网盘
+Browser.png -> Browser.ico -> Edge 浏览器
+Chrome.png -> Chrome.ico -> Chrome
+Firefox.png -> Firefox.ico -> Firefox
+Vsc.png -> Vsc.ico -> VS Code
+Steam.png -> Steam.ico -> Steam
+DIscord.png -> DIscord.ico -> Discord
+
+必需图标（缺少会终止安装）
+------------------------------
+ThisPC.ico
+RecycleBinFull.ico
+RecycleBinEmpty.ico
+Network.ico
+Documents.ico
+Folder.ico
+FolderEmpty.ico
+Excel.ico
+Excel2.ico
+PDF.ico
+TXT.ico
+PPT.ico
+PS.ico
+PSD.ico
+Archive.ico
+wechat.ico
+QQ.ico
+
+可选图标
+----------------
+以下规则按快捷方式实际指向的 exe 匹配：
+
+wechat.ico             Weixin.exe
+QQ.ico                 QQ.exe
+NetEaseCloudMusic.ico  cloudmusic.exe
+BaiduNetdisk.ico       BaiduNetdisk.exe
+PS.ico                 Photoshop.exe
+Browser.ico            msedge.exe
+Chrome.ico             chrome.exe
+Firefox.ico            firefox.exe
+Vsc.ico                Code.exe
+Steam.ico              steam.exe
+DIscord.ico            Discord.exe。
+
+文件扩展名与图标对应
+------------------------
+TXT.ico
+  .txt
+  .doc  .docx  .docm
+  .dot  .dotx  .dotm
+
+Excel.ico
+  .xlsx
+
+Excel2.ico
+  .xls  .xlsm
+
+PDF.ico
+  .pdf
+
+
+PSD.ico
+  .psd
+
+PPT.ico
+  .ppt .pptx .pptm
+  .pps .ppsx .ppsm
+  .pot .potx .potm
+
+Archive.ico
+  .zip .rar .7z
+  .tar .gz .bz2 .xz
+  .tgz .cab .iso
+
+安装器除了扩展名，还会修正以下常见 ProgID 图标：
+
+TXT.ico
+  Word.Document.8
+  Word.Document.12
+  Word.Template.12
+  Word.DocumentMacroEnabled.8
+  Word.DocumentMacroEnabled.12
+  Word.TemplateMacroEnabled.12
+  WPS.Doc.6
+  WPS.Docx.6
+  WPS.Docm.6
+  WPS.Dot.6
+  WPS.Dotx.6
+  WPS.Dotm.6
+  txtfile  txtfilelegacy
+
+Excel.ico / Excel2.ico
+  Excel.Sheet.12  Excel.Sheet.8
+  ET.Xlsx.6  ET.Xls.6  ET.Xlsm.6
+
+PDF.ico
+  sogoupdf.exe.pdf
+
+PPT.ico
+  PowerPoint.Show.12  PowerPoint.Show.8
+  PowerPoint.Template.12
+  WPP.Ppt.6  WPP.Pptx.6  WPP.Pptm.6
+  WPP.Pps.6  WPP.Ppsx.6  WPP.Ppsm.6
+  WPP.Pot.6  WPP.Potx.6  WPP.Potm.6
+
+Archive.ico
+  CompressedFolder
+  wpmain.exe.zip  wpmain.exe.rar  wpmain.exe.7z
+  wpmain.exe.tar  wpmain.exe.gz
+  wpmain.exe.bz2  wpmain.exe.xz
+  IconTools.ZipArchive
+  Shell 图标索引 50、53
+

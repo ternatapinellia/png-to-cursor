@@ -1,0 +1,516 @@
+﻿param(
+    [switch]$NoExplorerRestart,
+    [switch]$HideCloudEntries
+)
+
+$ErrorActionPreference = 'Stop'
+
+$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    $arguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"")
+    if ($NoExplorerRestart) { $arguments += '-NoExplorerRestart' }
+if ($HideCloudEntries) { $arguments += '-HideCloudEntries' }
+    Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments
+    exit
+}
+$Root = $PSScriptRoot
+$SourceIco = Join-Path $Root 'ICONS'
+$InstallIco = Join-Path $env:LOCALAPPDATA 'GenericIconTemplate'
+$BackupRoot = Join-Path $Root 'BACKUP'
+$RunBackup = Join-Path $BackupRoot (Get-Date -Format 'yyyyMMdd-HHmmss')
+
+if (-not (Test-Path -LiteralPath $SourceIco)) {
+    throw "ICO folder not found: $SourceIco"
+}
+
+New-Item -ItemType Directory -Path $InstallIco -Force | Out-Null
+New-Item -ItemType Directory -Path $RunBackup -Force | Out-Null
+
+function Set-DefaultIcon {
+    param([string]$Path, [string]$Value)
+
+    $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($Path)
+    try {
+        $key.SetValue('', $Value, [Microsoft.Win32.RegistryValueKind]::String)
+    } finally {
+        $key.Dispose()
+    }
+}
+
+function Set-RegValue {
+    param(
+        [string]$Path,
+        [string]$Name,
+        $Value,
+        [Microsoft.Win32.RegistryValueKind]$Kind = [Microsoft.Win32.RegistryValueKind]::String
+    )
+
+    $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($Path)
+    try {
+        $key.SetValue($Name, $Value, $Kind)
+    } finally {
+        $key.Dispose()
+    }
+}
+
+function Export-RegistryKey {
+    param([string]$RegistryPath, [string]$FileName)
+
+    $destination = Join-Path $RunBackup $FileName
+    $previousErrorAction = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & reg.exe export $RegistryPath $destination /y 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Set-Content -LiteralPath $destination -Value 'ABSENT' -Encoding ASCII
+        }
+    } finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+}
+function Get-IconPath {
+    param([string]$FileName)
+
+    $path = Join-Path $InstallIco $FileName
+    if (-not (Test-Path -LiteralPath $path)) {
+        throw "Required icon not found: $path"
+    }
+    return $path
+}
+
+Write-Host 'Backing up current icon settings...'
+$registryKeys = [ordered]@{
+    'ThisPC.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}'
+    'RecycleBin.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}'
+    'Network.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\CLSID\{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}'
+    'UserFiles.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\CLSID\{59031A47-3F72-44A7-89C5-5595FE6B30EE}'
+    'HideDesktopIcons.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons'
+    'DesktopNameSpace.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace'
+    'ShellIcons.reg' = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons'
+    'Classes-Directory.reg' = 'HKCU\Software\Classes\Directory'
+    'Classes-Folder.reg' = 'HKCU\Software\Classes\Folder'
+    'Classes-doc.reg' = 'HKCU\Software\Classes\.doc'
+    'Classes-docx.reg' = 'HKCU\Software\Classes\.docx'
+    'Classes-docm.reg' = 'HKCU\Software\Classes\.docm'
+    'Classes-dot.reg' = 'HKCU\Software\Classes\.dot'
+    'Classes-dotx.reg' = 'HKCU\Software\Classes\.dotx'
+    'Classes-dotm.reg' = 'HKCU\Software\Classes\.dotm'
+    'Classes-xlsx.reg' = 'HKCU\Software\Classes\.xlsx'
+    'Classes-xls.reg' = 'HKCU\Software\Classes\.xls'
+    'Classes-xlsm.reg' = 'HKCU\Software\Classes\.xlsm'
+    'Classes-pdf.reg' = 'HKCU\Software\Classes\.pdf'
+    'Classes-txt.reg' = 'HKCU\Software\Classes\.txt'
+    'Classes-psd.reg' = 'HKCU\Software\Classes\.psd'
+    'Classes-pptx.reg' = 'HKCU\Software\Classes\.pptx'
+}
+
+foreach ($entry in $registryKeys.GetEnumerator()) {
+    Export-RegistryKey -RegistryPath $entry.Value -FileName $entry.Key
+}
+
+Write-Host 'Copying ICO files to a stable install directory...'
+$sourceIcons = @(Get-ChildItem -LiteralPath $SourceIco -File -Filter '*.ico')
+if ($sourceIcons.Count -eq 0) {
+    throw "No ICO files found: $SourceIco"
+}
+foreach ($icon in $sourceIcons) {
+    Copy-Item -LiteralPath $icon.FullName -Destination $InstallIco -Force
+}
+
+$requiredIcons = @(
+    'ThisPC.ico', 'RecycleBinFull.ico', 'RecycleBinEmpty.ico',
+    'Network.ico', 'Documents.ico', 'Folder.ico', 'FolderEmpty.ico',
+    'Excel.ico', 'Excel2.ico', 'PDF.ico', 'TXT.ico', 'PPT.ico', 'PS.ico', 'PSD.ico', 'Archive.ico'
+)
+foreach ($name in $requiredIcons) {
+    Get-IconPath $name | Out-Null
+}
+
+$folderIcon = Get-IconPath 'Folder.ico'
+$folderEmptyIcon = Get-IconPath 'FolderEmpty.ico'
+$excelIcon = Get-IconPath 'Excel.ico'
+$excelLegacyIcon = Get-IconPath 'Excel2.ico'
+$pdfIcon = Get-IconPath 'PDF.ico'
+$txtIcon = Get-IconPath 'TXT.ico'
+$pptIcon = Get-IconPath 'PPT.ico'
+$psIcon = Get-IconPath 'PS.ico'
+$psdIcon = Get-IconPath 'PSD.ico'
+$archiveIcon = Get-IconPath 'Archive.ico'
+
+Write-Host 'Installing system icons...'
+$explorerClsid = 'Software\Microsoft\Windows\CurrentVersion\Explorer\CLSID'
+Set-DefaultIcon "$explorerClsid\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\DefaultIcon" (Get-IconPath 'ThisPC.ico')
+Set-DefaultIcon "$explorerClsid\{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}\DefaultIcon" (Get-IconPath 'Network.ico')
+Set-DefaultIcon "$explorerClsid\{59031A47-3F72-44A7-89C5-5595FE6B30EE}\DefaultIcon" (Get-IconPath 'Documents.ico')
+
+$recyclePath = "$explorerClsid\{645FF040-5081-101B-9F08-00AA002F954E}\DefaultIcon"
+Set-DefaultIcon $recyclePath (Get-IconPath 'RecycleBinFull.ico')
+Set-RegValue $recyclePath 'Full' (Get-IconPath 'RecycleBinFull.ico')
+Set-RegValue $recyclePath 'Empty' (Get-IconPath 'RecycleBinEmpty.ico')
+
+Write-Host 'Applying the folder icon system-wide...'
+foreach ($folderClass in @(
+    'Directory', 'Folder', 'LibraryFolder', 'UserLibraryFolder',
+    'UserFiles', 'UserProfile', 'AllUsersProfile', 'Public',
+    'UsersFilesFolder', 'SearchFolder'
+)) {
+    Set-DefaultIcon "Software\Classes\$folderClass\DefaultIcon" $folderIcon
+}
+
+$shellIconsPath = 'Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons'
+Set-RegValue $shellIconsPath '3' $folderIcon
+Set-RegValue $shellIconsPath '4' $folderEmptyIcon
+Set-RegValue $shellIconsPath '50' $archiveIcon
+Set-RegValue $shellIconsPath '53' $archiveIcon
+
+Write-Host 'Applying document and image file icons...'
+$extensionIcons = [ordered]@{
+    '.doc' = $txtIcon; '.docx' = $txtIcon; '.docm' = $txtIcon
+    '.dot' = $txtIcon; '.dotx' = $txtIcon; '.dotm' = $txtIcon
+    '.xlsx' = $excelIcon; '.xls' = $excelLegacyIcon; '.xlsm' = $excelLegacyIcon
+    '.pdf' = $pdfIcon; '.txt' = $txtIcon
+    '.zip' = $archiveIcon; '.rar' = $archiveIcon; '.7z' = $archiveIcon
+    '.tar' = $archiveIcon; '.gz' = $archiveIcon; '.bz2' = $archiveIcon
+    '.xz' = $archiveIcon; '.tgz' = $archiveIcon; '.cab' = $archiveIcon
+    '.iso' = $archiveIcon
+    '.ppt' = $pptIcon; '.pptx' = $pptIcon; '.pptm' = $pptIcon
+    '.pps' = $pptIcon; '.ppsx' = $pptIcon; '.ppsm' = $pptIcon
+    '.pot' = $pptIcon; '.potx' = $pptIcon; '.potm' = $pptIcon
+}
+foreach ($entry in $extensionIcons.GetEnumerator()) {
+    Set-DefaultIcon ("Software\Classes\$($entry.Key)\DefaultIcon") $entry.Value
+}
+
+$progIdIcons = [ordered]@{
+    'Word.Document.12' = $txtIcon; 'Word.Document.8' = $txtIcon
+    'Word.Template.12' = $txtIcon
+    'Word.DocumentMacroEnabled.12' = $txtIcon
+    'Word.TemplateMacroEnabled.12' = $txtIcon
+    'Word.DocumentMacroEnabled.8' = $txtIcon
+    'WPS.Doc.6' = $txtIcon; 'WPS.Docx.6' = $txtIcon; 'WPS.Docm.6' = $txtIcon
+    'WPS.Dot.6' = $txtIcon; 'WPS.Dotx.6' = $txtIcon; 'WPS.Dotm.6' = $txtIcon
+    'Excel.Sheet.12' = $excelIcon; 'Excel.Sheet.8' = $excelLegacyIcon
+    'ET.Xlsx.6' = $excelIcon; 'ET.Xls.6' = $excelLegacyIcon; 'ET.Xlsm.6' = $excelLegacyIcon
+    'sogoupdf.exe.pdf' = $pdfIcon; 'txtfilelegacy' = $txtIcon; 'txtfile' = $txtIcon
+    'AppX4ztfk9wxr86nxmzzq47px0nh0e58b8fw' = $txtIcon
+    'Photoshop.Image.21' = $psdIcon; 'Photoshop.Image.20' = $psdIcon; 'Photoshop.Image.19' = $psdIcon
+    'CompressedFolder' = $archiveIcon
+    'wpmain.exe.zip' = $archiveIcon; 'wpmain.exe.rar' = $archiveIcon
+    'wpmain.exe.7z' = $archiveIcon; 'wpmain.exe.tar' = $archiveIcon
+    'wpmain.exe.gz' = $archiveIcon; 'wpmain.exe.bz2' = $archiveIcon
+    'wpmain.exe.xz' = $archiveIcon
+    'PowerPoint.Show.12' = $pptIcon; 'PowerPoint.Show.8' = $pptIcon
+    'PowerPoint.Template.12' = $pptIcon
+    'WPP.Ppt.6' = $pptIcon; 'WPP.Pptx.6' = $pptIcon; 'WPP.Pptm.6' = $pptIcon
+    'WPP.Pps.6' = $pptIcon; 'WPP.Ppsx.6' = $pptIcon; 'WPP.Ppsm.6' = $pptIcon
+    'WPP.Pot.6' = $pptIcon; 'WPP.Potx.6' = $pptIcon; 'WPP.Potm.6' = $pptIcon
+}
+foreach ($entry in $progIdIcons.GetEnumerator()) {
+    Set-DefaultIcon "Software\Classes\$($entry.Key)\DefaultIcon" $entry.Value
+}
+
+foreach ($extension in @('.doc', '.docx', '.docm', '.dot', '.dotx', '.dotm')) {
+    Set-DefaultIcon "Software\Classes\$extension\DefaultIcon" $txtIcon
+}
+
+$officeIconChecks = @(
+    'Software\Classes\.doc\DefaultIcon',
+    'Software\Classes\.docx\DefaultIcon',
+    'Software\Classes\.docm\DefaultIcon',
+    'Software\Classes\Word.Document.8\DefaultIcon',
+    'Software\Classes\Word.Document.12\DefaultIcon',
+    'Software\Classes\Word.DocumentMacroEnabled.12\DefaultIcon',
+    'Software\Classes\WPS.Doc.6\DefaultIcon',
+    'Software\Classes\WPS.Docx.6\DefaultIcon',
+    'Software\Classes\WPS.Docm.6\DefaultIcon'
+)
+$badOfficeIcons = @()
+foreach ($checkPath in $officeIconChecks) {
+    $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($checkPath)
+    if (-not $key) {
+        $badOfficeIcons += "$checkPath (missing)"
+        continue
+    }
+    try {
+        $actual = [string]$key.GetValue('')
+        if ($actual -ne $txtIcon) {
+            $badOfficeIcons += "$checkPath = $actual"
+        }
+    } finally {
+        $key.Dispose()
+    }
+}
+if ($badOfficeIcons.Count -gt 0) {
+    throw ("DOC/DOCX icon verification failed:`r`n" + ($badOfficeIcons -join "`r`n"))
+}
+# Desktop views can ignore desktop.ini; keep Folder/Directory associations as fallback.
+foreach ($folderFallback in @('Folder', 'Directory')) {
+    Set-DefaultIcon "Software\Classes\$folderFallback\DefaultIcon" $folderIcon
+}
+
+# Windows 11 also consults CLSID and machine-level Shell Icons.
+$clsidIcons = [ordered]@{
+    '{E88DCCE0-B7B3-11D1-A9F0-00AA0060FA31}' = $archiveIcon
+    '{2c07c258-a43a-4718-b0ae-b27f8c3fe64e}' = $psdIcon
+}
+foreach ($entry in $clsidIcons.GetEnumerator()) {
+    Set-DefaultIcon "Software\Classes\CLSID\$($entry.Key)\DefaultIcon" $entry.Value
+    try {
+        $key = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey("SOFTWARE\Classes\CLSID\$($entry.Key)\DefaultIcon")
+        try { $key.SetValue('', $entry.Value, [Microsoft.Win32.RegistryValueKind]::String) } finally { $key.Dispose() }
+    } catch { Write-Warning "System CLSID icon could not be written: $($entry.Key)" }
+}
+
+try {
+    $machineShellIcons = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey('SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons')
+    try {
+        $machineShellIcons.SetValue('3', $folderIcon, [Microsoft.Win32.RegistryValueKind]::String)
+        $machineShellIcons.SetValue('4', $folderEmptyIcon, [Microsoft.Win32.RegistryValueKind]::String)
+    } finally { $machineShellIcons.Dispose() }
+} catch { Write-Warning 'System Shell Icons values could not be written; user-level values remain active.' }
+# Some archive and Photoshop classes are registered only in HKLM.
+$localMachineClasses = 'SOFTWARE\Classes'
+foreach ($machineClass in @(
+    'Directory', 'Folder', 'Photoshop.Image.21', 'CompressedFolder',
+    'wpmain.exe.zip', 'wpmain.exe.rar', 'wpmain.exe.7z',
+    'wpmain.exe.tar', 'wpmain.exe.gz', 'wpmain.exe.bz2', 'wpmain.exe.xz'
+)) {
+    $classIcon = switch ($machineClass) {
+        { $_ -in @('Directory', 'Folder') } { $folderIcon; break }
+        'Photoshop.Image.21' { $psdIcon; break }
+        default { $archiveIcon }
+    }
+    $key = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey("$localMachineClasses\$machineClass\DefaultIcon")
+    try {
+        $key.SetValue('', $classIcon, [Microsoft.Win32.RegistryValueKind]::String)
+    } finally {
+        $key.Dispose()
+    }
+}
+
+# ZIP/archive types need a dedicated user class because the system
+# compressed-folder handler caches its own icon in Explorer.
+$archiveCommandKey = 'Software\Classes\IconTools.ZipArchive\shell\open\command'
+$archiveCommand = $null
+if (Test-Path -LiteralPath 'HKCU:\Software\Classes\wpmain.exe.zip\shell\open\command') {
+    $archiveCommand = (Get-Item -LiteralPath 'HKCU:\Software\Classes\wpmain.exe.zip\shell\open\command').GetValue('')
+}
+if (-not $archiveCommand) {
+    $archiveCommand = '"%SystemRoot%\explorer.exe" "%1"'
+}
+Set-DefaultIcon 'Software\Classes\IconTools.ZipArchive' 'Compressed Archive'
+Set-DefaultIcon 'Software\Classes\IconTools.ZipArchive\DefaultIcon' $archiveIcon
+Set-DefaultIcon $archiveCommandKey $archiveCommand
+Set-DefaultIcon 'Software\Classes\.zip' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.rar' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.7z' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.tar' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.gz' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.bz2' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.xz' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.tgz' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.cab' 'IconTools.ZipArchive'
+Set-DefaultIcon 'Software\Classes\.iso' 'IconTools.ZipArchive'
+
+Write-Host 'Updating common shortcuts...'
+$desktop = [Environment]::GetFolderPath('Desktop')
+$publicDesktop = Join-Path $env:PUBLIC 'Desktop'
+$shortcutBackup = Join-Path $RunBackup 'Shortcuts'
+New-Item -ItemType Directory -Path $shortcutBackup -Force | Out-Null
+
+$shortcutIconByTarget = @{
+    'Weixin.exe' = 'wechat.ico'; 'QQ.exe' = 'QQ.ico'
+    'Photoshop.exe' = 'PS.ico'
+}
+$shortcutIconByName = @{
+    '线性反向' = 'Folder.ico'
+}
+
+$shell = New-Object -ComObject WScript.Shell
+$shortcutFiles = @()
+foreach ($folder in @($desktop, $publicDesktop)) {
+    if (Test-Path -LiteralPath $folder) {
+        $shortcutFiles += @(Get-ChildItem -LiteralPath $folder -File -Filter '*.lnk')
+    }
+}
+
+$updatedShortcuts = 0
+foreach ($shortcutFile in $shortcutFiles) {
+    try {
+        $shortcut = $shell.CreateShortcut($shortcutFile.FullName)
+        $baseName = [IO.Path]::GetFileNameWithoutExtension($shortcutFile.Name)
+        $targetName = [IO.Path]::GetFileName($shortcut.TargetPath)
+        $iconName = $null
+        if ($shortcutIconByName.ContainsKey($baseName)) {
+            $iconName = $shortcutIconByName[$baseName]
+        } elseif ($targetName -and $shortcutIconByTarget.ContainsKey($targetName)) {
+            $iconName = $shortcutIconByTarget[$targetName]
+        }
+        if (-not $iconName) {
+            continue
+        }
+
+        $iconPath = Join-Path $InstallIco $iconName
+        if (-not (Test-Path -LiteralPath $iconPath)) {
+            Write-Warning "Shortcut icon is missing: $iconPath"
+            continue
+        }
+
+        Copy-Item -LiteralPath $shortcutFile.FullName -Destination $shortcutBackup -Force
+        if ([string]::IsNullOrWhiteSpace($shortcut.IconLocation) -or $shortcut.IconLocation -eq ',0') {
+            $shortcut.IconLocation = Join-Path $env:SystemRoot 'System32\shell32.dll,0'
+        }
+        $shortcut.IconLocation = "$iconPath,0"
+        $shortcut.Save()
+        $updatedShortcuts++
+    } catch {
+        Write-Warning "Could not update shortcut '$($shortcutFile.FullName)': $($_.Exception.Message)"
+    }
+}
+
+Write-Host 'Applying icons to desktop folders...'
+$desktopIniBackup = Join-Path $RunBackup 'DesktopIni'
+New-Item -ItemType Directory -Path $desktopIniBackup -Force | Out-Null
+$folderRoots = @($desktop)
+$shortcutShell = New-Object -ComObject WScript.Shell
+foreach ($shortcutFile in @(Get-ChildItem -LiteralPath $desktop -File -Filter '*.lnk' -Force -ErrorAction SilentlyContinue)) {
+    try {
+        $shortcutTarget = $shortcutShell.CreateShortcut($shortcutFile.FullName).TargetPath
+        if ($shortcutTarget -and (Test-Path -LiteralPath $shortcutTarget -PathType Container)) {
+            $folderRoots += $shortcutTarget
+        }
+    } catch {
+        # Ignore shortcuts whose target cannot be resolved.
+    }
+}
+
+$desktopFolders = @(
+    $folderRoots |
+        Sort-Object -Unique |
+        ForEach-Object {
+            Get-Item -LiteralPath $_ -Force -ErrorAction SilentlyContinue
+            Get-ChildItem -LiteralPath $_ -Directory -Force -Recurse -ErrorAction SilentlyContinue
+        } |
+        Where-Object {
+            $_ -and $_.FullName -notmatch '\\BACKUP(\\|$)'
+        } |
+        Sort-Object FullName -Unique
+)
+$folderSuccess = 0
+$folderFailures = @()
+foreach ($folder in $desktopFolders) {
+    $desktopIni = Join-Path $folder.FullName 'desktop.ini'
+    $folderItem = $null
+    $iniItem = $null
+    try {
+        $folderItem = Get-Item -LiteralPath $folder.FullName -Force
+        $folderItem.Attributes = $folderItem.Attributes -bor [IO.FileAttributes]::ReadOnly -bor [IO.FileAttributes]::System
+        if (Test-Path -LiteralPath $desktopIni) {
+            $iniItem = Get-Item -LiteralPath $desktopIni -Force
+            $iniItem.Attributes = [IO.FileAttributes]::Normal
+        }
+        $safeName = $folder.Name -replace '[\\/:*?"<>|]', '_'
+        $backupPath = Join-Path $desktopIniBackup ($safeName + '.desktop.ini')
+        if (Test-Path -LiteralPath $desktopIni) {
+            Copy-Item -LiteralPath $desktopIni -Destination $backupPath -Force
+        } else {
+            Set-Content -LiteralPath $backupPath -Value 'ABSENT' -Encoding ASCII
+        }
+        $iniText = "[.ShellClassInfo]`r`nIconResource=$folderIcon,0`r`nIconFile=$folderIcon`r`nIconIndex=0`r`n"
+        [IO.File]::WriteAllText($desktopIni, $iniText, (New-Object Text.UTF8Encoding($false)))
+        $iniItem = Get-Item -LiteralPath $desktopIni -Force
+        $iniItem.Attributes = $iniItem.Attributes -bor [IO.FileAttributes]::Hidden -bor [IO.FileAttributes]::System
+        $folderItem.Attributes = $folderItem.Attributes -bor [IO.FileAttributes]::ReadOnly -bor [IO.FileAttributes]::System
+        $folderSuccess++
+    } catch {
+        $folderFailures += $folder.FullName
+        Write-Warning "Could not set folder icon for '$($folder.FullName)': $($_.Exception.Message)"
+    }
+}
+if ($folderFailures.Count -gt 0) {
+    Write-Warning ("Folders not updated: {0}" -f $folderFailures.Count)
+    $folderFailures | ForEach-Object { Write-Warning $_ }
+}
+
+# Desktop views on some Windows 11 builds ignore folder desktop.ini.
+# Create a same-name shortcut proxy for first-level desktop folders.
+$proxyShell = New-Object -ComObject WScript.Shell
+$proxyCreated = 0
+foreach ($folder in @(Get-ChildItem -LiteralPath $desktop -Directory -Force -ErrorAction SilentlyContinue)) {
+    if ($folder.FullName -eq $Root) { continue }
+    if ($folder.FullName -match '\\BACKUP(\\|$)') { continue }
+    $linkPath = Join-Path $desktop ($folder.Name + '.lnk')
+    try {
+        $link = $proxyShell.CreateShortcut($linkPath)
+        $link.TargetPath = $folder.FullName
+        $link.WorkingDirectory = $folder.FullName
+        $link.IconLocation = "$folderIcon,0"
+        $link.Description = 'Folder shortcut generated by Generic Icon Template'
+        $link.Save()
+        $folder.Attributes = $folder.Attributes -bor [IO.FileAttributes]::Hidden
+        $proxyCreated++
+    } catch {
+        Write-Warning "Could not create folder proxy for '$($folder.FullName)': $($_.Exception.Message)"
+    }
+}
+if ($proxyCreated -gt 0) { Write-Host ("Desktop folder proxies created: {0}" -f $proxyCreated) }
+if ($HideCloudEntries) {
+    Write-Host 'Hiding this PC, user profile, network, OneDrive and WPS cloud desktop entries...'
+    $visibilityPath = 'Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel'
+    foreach ($clsid in @(
+        '{20D04FE0-3AEA-1069-A2D8-08002B30309D}',
+        '{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}',
+        '{59031A47-3F72-44A7-89C5-5595FE6B30EE}'
+    )) {
+        Set-RegValue $visibilityPath $clsid 1 ([Microsoft.Win32.RegistryValueKind]::DWord)
+    }
+    
+    $desktopNameSpace = 'Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace'
+    foreach ($namespaceId in @(
+        '{018D5C66-4533-4307-9B53-224DE2ED1FE6}',
+        '{EEEEFCF7-867B-4FA2-9ABD-884CF531B622}'
+    )) {
+        [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree("$desktopNameSpace\$namespaceId", $false)
+    }
+}
+
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class GenericIconShellRefresh {
+    [DllImport("shell32.dll")]
+    public static extern void SHChangeNotify(int eventId, int flags, IntPtr item1, IntPtr item2);
+}
+"@
+[GenericIconShellRefresh]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+
+if (-not $NoExplorerRestart) {
+    Write-Host 'Refreshing Explorer and icon cache...'
+    foreach ($process in @(Get-Process explorer -ErrorAction SilentlyContinue)) {
+        Stop-Process -Id $process.Id -Force
+    }
+    Start-Sleep -Milliseconds 700
+
+    $cacheDirectory = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Explorer'
+    if (Test-Path -LiteralPath $cacheDirectory) {
+        Get-ChildItem -LiteralPath $cacheDirectory -Force -File |
+            Where-Object { $_.Name -match '^iconcache_.*\.db$' } |
+            ForEach-Object {
+                try {
+                    [IO.File]::Delete($_.FullName)
+                } catch {
+                    # Explorer may still hold cache files briefly.
+                }
+            }
+    }
+
+    Start-Process -FilePath "$env:WINDIR\explorer.exe"
+    Start-Sleep -Seconds 3
+}
+
+Write-Host ''
+Write-Host 'Installation complete.'
+Write-Host ("ICO files: {0}" -f $sourceIcons.Count)
+Write-Host ("Shortcuts updated: {0}" -f $updatedShortcuts)
+Write-Host ("Desktop folders updated: {0}" -f $desktopFolders.Count)
+Write-Host ("Backup: {0}" -f $RunBackup)
