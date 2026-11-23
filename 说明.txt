@@ -1,0 +1,57 @@
+﻿鼠标挂件 使用说明
+================
+
+一、启动
+双击 CursorPendant.exe。
+程序启动后会常驻系统托盘，不会出现在任务栏。
+
+托盘图标右键菜单：
+- Show / Hide：显示或隐藏挂件
+- Pause / Resume：暂停或恢复绳子摆动
+- Settings：打开设置窗口
+- Exit：退出程序
+
+鼠标光标被系统隐藏时（例如播放全屏视频），挂件也会自动隐藏。
+
+
+二、设置
+Settings 中可调整：
+- Character size：角色大小
+- Rope length：绳子长度，最小可调到 0
+- Horizontal offset：角色左右偏移
+- Vertical offset：角色上下偏移
+- Rope color：绳子颜色，默认黑色
+
+偏移以自动识别出的角色头顶为基准：
+- Horizontal 正数向右，负数向左
+- Vertical 正数向下，负数向上
+
+
+三、三个 GIF 状态
+assets\idle.gif        普通待机动画
+assets\long_idle.gif   长时间静止后使用（约 5 分钟）
+assets\swing.gif       鼠标移动或挂件摇摆时使用
+
+更换素材时直接覆盖同名 GIF，然后重启 CursorPendant.exe。
+GIF 必须带透明通道。程序会按照 GIF 自带的每帧延时播放。
+
+
+四、头顶自动识别
+程序会读取每张 GIF 第一帧的非透明像素，找到图形实际顶部，
+用于连接绳尾。GIF 图片顶部留有透明空白没有问题。
+如果连接位置仍有偏差，可在 Settings 里用上下、左右偏移微调。
+
+
+五、配置文件
+config.json 保存角色尺寸、绳长、偏移、绳色和动画文件路径。
+正常情况下不需要手动编辑；通过 Settings 调整即可自动保存。
+
+
+六、退出
+右键托盘图标，选择 Exit。
+仅关闭挂件窗口不会结束程序，请使用托盘菜单中的 Exit。
+
+
+七、系统要求
+Windows 10 / 11，64 位系统。
+程序使用系统自带的 .NET Framework，无需额外安装 Python。

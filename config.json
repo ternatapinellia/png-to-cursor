@@ -1,0 +1,12 @@
+{
+  "anchor_mode": 2,
+  "character_height": 83,
+  "rope_length": 104,
+  "character_rotation_scale": -1,
+  "head_offset_x": 20,
+  "head_offset_y": 12,
+  "rope_color": "#400080",
+  "idle_gif": "assets/idle.gif",
+  "long_idle_gif": "assets/long_idle.gif",
+  "swing_gif": "assets/swing.gif"
+}
