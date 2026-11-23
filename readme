@@ -10,6 +10,12 @@ downlosd link：https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.
 
 -
 
+该压缩包旨在将gif文件转化为可直接使用的鼠标挂件，系统托盘中右键图标（一个带白色叹号的蓝色圆形），可自行设定开机自启等，setting中可以调整挂件角色、绳子长度和大小，以及绳子顶端和角色的摆动锚点位置，具体请参照其中的txt。
+
+downlosd link：https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.0
+
+-
+
 This package is designed to convert finished PNG artwork into CUR and other cursor formats with a single click, allowing you to create custom mouse cursors. Please refer to the included **PNG Drawing Requirements** file for instructions on preparing the images.
 
 **Download link:** [https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.0](https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.0)
@@ -19,3 +25,15 @@ This package is designed to convert finished PNG artwork into CUR and other curs
 This package is designed to convert finished PNG artwork into ICO files with a single click. It also allows you to install icons and change the icons of most common file types in one click. Please refer to the two included TXT files for detailed instructions.
 
 **Download link:** [https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.0](https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.0)
+
+-
+
+This package is designed to convert GIF files into ready-to-use mouse accessories.
+
+Right-click the system tray icon (a blue circle with a white exclamation mark) to access options such as enabling startup on boot.
+
+In **Settings**, you can adjust the accessory character, rope length and size, as well as the swing anchor points at the top of the rope and on the character.
+
+Please refer to the included TXT file for detailed instructions.
+
+**Download link:** https://github.com/ternatapinellia/png-to-cursor/releases/tag/1.0
